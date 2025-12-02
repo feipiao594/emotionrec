@@ -4,9 +4,9 @@
 
 import torch
 import torch.nn as nn
-from transformers import Optional
+from typing import Optional
 
-import encoder, model
+import model, encoder
 
 class EmotionClassifierModel(nn.Module):
     """

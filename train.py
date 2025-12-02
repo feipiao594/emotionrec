@@ -5,9 +5,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from dataset import EmotionDataset
-import encoder as enc
-import model as mod
+from dataset import *
+from encoder import *
+from model import *
 
 def collate_fn_ser(batch: List[Dict]) -> Dict:
     """
@@ -49,6 +49,7 @@ def train_one_epoch(
     total_samples = 0
 
     for batch in dataloader:
+        # print("[DEBUG] batch keys:", batch.keys())
         waveforms = batch["waveforms"].to(device)
         lengths = batch["lengths"].to(device)
         labels = batch["labels"].to(device)
@@ -107,8 +108,8 @@ def evaluate(
 def train_loop(
     train_manifest: str,
     val_manifest: Optional[str] = None,
-    batch_size: int = 8,
-    num_epochs: int = 10,
+    batch_size: int = 32,
+    num_epochs: int = 100,
     lr: float = 1e-4,
     hubert_name: str = "facebook/hubert-base-ls960",
     freeze_hubert: bool = True,
@@ -118,13 +119,13 @@ def train_loop(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 1) 先用训练集构建 label 映射（确保 train/val 一致）
-    tmp_ds = EmotionDataset(train_manifest)
+    tmp_ds = EmotionDataset(manifest_path = train_manifest)
     label2id = tmp_ds.label2id
     num_classes = len(label2id)
     print("Labels:", label2id)
 
     # 2) 构建真正的 Dataset / DataLoader
-    train_ds = EmotionDataset(train_manifest, label2id=label2id)
+    train_ds = EmotionDataset(manifest_path = train_manifest, label2id = label2id)
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
@@ -134,7 +135,7 @@ def train_loop(
     )
 
     if val_manifest is not None and os.path.exists(val_manifest):
-        val_ds = EmotionDataset(val_manifest, label2id=label2id)
+        val_ds = EmotionDataset(manifest_path = val_manifest, label2id = label2id)
         val_loader = DataLoader(
             val_ds,
             batch_size=batch_size,
@@ -146,15 +147,17 @@ def train_loop(
         val_loader = None
 
     # 3) 构建模型（后续你要换 encoder / temporal_model，只改这里）
-    encoder = enc.HubertFrameEncoder(
+    encoder = HubertFrameEncoder(
         hubert_name=hubert_name,
         freeze=freeze_hubert,
     )
-    temporal_model = mod.MeanPoolingTemporalModel()
-    model = mod.EmotionClassifierModel(
+    # temporal_model = MeanPoolingTemporalModel()
+    temporal_model = CNNTemporalModel(encoder.hidden_size)
+    model = EmotionClassifierModel(
         encoder=encoder,
         temporal_model=temporal_model,
         num_classes=num_classes,
+        hidden_size=temporal_model.hidden_dim,
     ).to(device)
 
     optimizer = torch.optim.Adam(
@@ -166,6 +169,7 @@ def train_loop(
     best_val_acc = 0.0
 
     for epoch in range(1, num_epochs + 1):
+        print(f"=== Epoch {epoch} ===")
         train_loss = train_one_epoch(model, train_loader, optimizer, device)
         print(f"[Epoch {epoch}] train_loss = {train_loss:.4f}")
 
@@ -188,16 +192,17 @@ def train_loop(
                 print(f"  -> New best model saved to {ckpt_path}")
         else:
             # 没有验证集就每个 epoch 都存
-            ckpt_path = os.path.join(save_dir, f"epoch_{epoch}.pt")
-            torch.save(
-                {
-                    "model_state": model.state_dict(),
-                    "label2id": label2id,
-                    "hubert_name": hubert_name,
-                },
-                ckpt_path,
-            )
-            print(f"  -> Model saved to {ckpt_path}")
+            if epoch % 10 == 0:
+                ckpt_path = os.path.join(save_dir, f"epoch_{epoch}.pt")
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "label2id": label2id,
+                        "hubert_name": hubert_name,
+                    },
+                    ckpt_path,
+                )
+                print(f"  -> Model saved to {ckpt_path}")
 
 
 if __name__ == "__main__":
@@ -208,14 +213,15 @@ if __name__ == "__main__":
     {"audio_path": "data/wav/002.wav", "label": "angry"}
     ...
     """
-    train_manifest = "train_manifest.jsonl"
-    val_manifest = "val_manifest.jsonl"  # 没有可以改成 None
+    train_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/train_5000.jsonl"
+    val_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/val_5000.jsonl"
+    # 没有可以改成 None
 
     train_loop(
         train_manifest=train_manifest,
         val_manifest=val_manifest,
         batch_size=8,
-        num_epochs=10,
+        num_epochs=100,
         lr=1e-4,
         hubert_name="facebook/hubert-base-ls960",
         freeze_hubert=True,

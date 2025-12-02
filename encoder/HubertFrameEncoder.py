@@ -4,7 +4,7 @@ import torch
 
 from transformers import HubertModel
 
-from encoder import BaseFrameEncoder
+from encoder import *
 
 class HubertFrameEncoder(BaseFrameEncoder):
     """
