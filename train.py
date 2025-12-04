@@ -167,6 +167,7 @@ def train_loop(
 
     os.makedirs(save_dir, exist_ok=True)
     best_val_acc = 0.0
+    best_loss = float("inf")
 
     for epoch in range(1, num_epochs + 1):
         print(f"=== Epoch {epoch} ===")
@@ -190,6 +191,20 @@ def train_loop(
                     ckpt_path,
                 )
                 print(f"  -> New best model saved to {ckpt_path}")
+
+            if train_loss < best_loss:
+                best_loss = train_loss
+                ckpt_loss_path = os.path.join(save_dir, "best_loss_model.pt")
+                torch.save(
+                    {
+                        "model_state": model.state_dict(),
+                        "label2id": label2id,
+                        "hubert_name": hubert_name,
+                    },
+                    ckpt_loss_path,
+                )
+                print(f"  -> New best(loss) model saved to {ckpt_loss_path}")
+
         else:
             # 没有验证集就每个 epoch 都存
             if epoch % 10 == 0:
@@ -213,8 +228,8 @@ if __name__ == "__main__":
     {"audio_path": "data/wav/002.wav", "label": "angry"}
     ...
     """
-    train_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/train_5000.jsonl"
-    val_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/val_5000.jsonl"
+    train_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/train_35000.jsonl"
+    val_manifest = "/home/feipiao/Downloads/Emotional Speech Dataset (ESD)/Emotion Speech Dataset/val_35000.jsonl"
     # 没有可以改成 None
 
     train_loop(

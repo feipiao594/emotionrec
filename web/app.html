@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>情感识别</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
+    button { margin: 5px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+    #status { margin-top: 10px; white-space: pre-line; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    h1 { margin-bottom: 8px; }
+    section { margin-top: 24px; padding-top: 12px; border-top: 1px solid #ddd; }
+    pre { background: #f6f6f6; padding: 10px; border-radius: 4px; }
+    input[type="file"] { margin-top: 8px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>当前用户：{{ username }}</div>
+    <a href="/logout">退出登录</a>
+  </header>
+
+  <h1>情感识别</h1>
+  <p>
+    你可以选择两种方式进行情感分析：<br>
+    1）在浏览器中直接录音，回放后点击上传；<br>
+    2）选择本地已有的音频文件上传分析（适配手机上无法直接录音的情况）。
+  </p>
+
+  <!-- ========== 录音方式 ========== -->
+  <section>
+    <h2>方式一：在浏览器中录音</h2>
+    <div>
+      <button id="btnRecord">开始录音</button>
+      <button id="btnStop" disabled>停止录音</button>
+      <button id="btnPlay" disabled>播放录音</button>
+      <button id="btnUpload" disabled>上传并分析</button>
+    </div>
+    <h3>录音预览：</h3>
+    <audio id="audioPlayer" controls></audio>
+  </section>
+
+  <!-- ========== 文件上传方式 ========== -->
+  <section>
+    <h2>方式二：选择本地音频文件上传分析</h2>
+    <p>如果你的浏览器不支持直接录音（例如部分手机浏览器），可以用这个方式：</p>
+    <input type="file" id="fileInput" accept="audio/*" />
+    <br />
+    <button id="btnUploadFile">上传文件并分析</button>
+  </section>
+
+  <!-- ========== 预测结果区域 ========== -->
+  <section>
+    <h2>预测结果</h2>
+    <div id="status"></div>
+    <pre id="result">暂无结果</pre>
+  </section>
+
+  <script>
+    const serverUrl = "/predict";  // 和 FastAPI 同源，不需要完整域名
+
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let audioBlob = null;
+
+    const btnRecord = document.getElementById("btnRecord");
+    const btnStop = document.getElementById("btnStop");
+    const btnPlay = document.getElementById("btnPlay");
+    const btnUpload = document.getElementById("btnUpload");
+    const audioPlayer = document.getElementById("audioPlayer");
+    const statusDiv = document.getElementById("status");
+    const resultPre = document.getElementById("result");
+
+    const fileInput = document.getElementById("fileInput");
+    const btnUploadFile = document.getElementById("btnUploadFile");
+
+    function setStatus(msg) {
+      statusDiv.textContent = msg;
+    }
+
+    // ===== 方式一：浏览器录音 =====
+    btnRecord.onclick = async () => {
+      recordedChunks = [];
+      audioBlob = null;
+      resultPre.textContent = "";
+
+      // 能力检测：先看浏览器是否支持 getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        resultPre.textContent = "当前浏览器不支持直接录音（缺少 navigator.mediaDevices.getUserMedia）。";
+        return;
+      }
+
+      setStatus("请求麦克风权限...");
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        recordedChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          audioBlob = new Blob(recordedChunks, { type: "audio/webm" });
+          const url = URL.createObjectURL(audioBlob);
+          audioPlayer.src = url;
+          btnPlay.disabled = false;
+          btnUpload.disabled = false;
+          setStatus("录音完成，可以播放或点击“上传并分析”。");
+        };
+
+        mediaRecorder.start();
+        setStatus("录音中...");
+        btnRecord.disabled = true;
+        btnStop.disabled = false;
+      } catch (err) {
+        console.error(err);
+        setStatus("无法访问麦克风：" + err.name + " - " + err.message + "\n你也可以使用下面的文件上传方式。");
+      }
+    };
+
+    btnStop.onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        btnStop.disabled = true;
+        btnRecord.disabled = false;
+        setStatus("停止录音。");
+      }
+    };
+
+    btnPlay.onclick = () => {
+      if (audioBlob) {
+        audioPlayer.play();
+      }
+    };
+
+    btnUpload.onclick = async () => {
+      if (!audioBlob) {
+        setStatus("没有可上传的录音。");
+        return;
+      }
+
+      setStatus("正在上传录音并分析...");
+      resultPre.textContent = "暂无结果";
+
+      try {
+        const formData = new FormData();
+        formData.append("file", audioBlob, "audio.webm");
+
+        const resp = await fetch(serverUrl, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resp.ok) {
+          throw new Error("服务器返回错误状态: " + resp.status);
+        }
+
+        const data = await resp.json();
+        setStatus("分析完成。");
+        renderResult(data);
+      } catch (err) {
+        console.error(err);
+        setStatus("上传或分析失败: " + err);
+      }
+    };
+
+    // ===== 方式二：上传本地音频文件 =====
+    btnUploadFile.onclick = async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        setStatus("请先选择一个音频文件。");
+        return;
+      }
+
+      setStatus("正在上传文件并分析...");
+      resultPre.textContent = "暂无结果";
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const resp = await fetch(serverUrl, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resp.ok) {
+          throw new Error("服务器返回错误状态: " + resp.status);
+        }
+
+        const data = await resp.json();
+        setStatus("分析完成。");
+        renderResult(data);
+      } catch (err) {
+        console.error(err);
+        setStatus("上传或分析失败: " + err);
+      }
+    };
+
+    // ===== 通用：渲染预测结果 =====
+    function renderResult(data) {
+      const top1Label = data.top1_label;
+      const top1Prob = (data.top1_prob * 100).toFixed(2);
+
+      let txt = `预测情感：${top1Label}\n置信度：${top1Prob}%\n\nTop-K:\n`;
+      for (const [lab, prob] of Object.entries(data.topk)) {
+        txt += `  - ${lab}: ${(prob * 100).toFixed(2)}%\n`;
+      }
+      resultPre.textContent = txt;
+    }
+  </script>
+</body>
+</html>
