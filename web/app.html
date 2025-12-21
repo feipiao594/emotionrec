@@ -82,7 +82,6 @@
     btnRecord.onclick = async () => {
       recordedChunks = [];
       audioBlob = null;
-      resultPre.textContent = "";
 
       // 能力检测：先看浏览器是否支持 getUserMedia
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
