@@ -1,7 +1,9 @@
 # server.py
 import io
+import json
 import os
 import shutil
+from pathlib import Path
 from typing import Dict, Optional
 
 import time
@@ -10,6 +12,7 @@ import torch.nn as nn
 import torchaudio
 import subprocess
 import tempfile
+import uvicorn
 
 from fastapi import (
     FastAPI,
@@ -28,13 +31,21 @@ from pydantic import BaseModel
 from encoder import HubertFrameEncoder
 from model import CNNTemporalModel, EmotionClassifierModel
 
-# ==== 配置部分 ====
-CKPT_PATH = "checkpoints_ser/best_loss_model_new_35000.pt"
-TARGET_SR = 16000
-SECRET_KEY = "secret_key"  # 生产环境请改！！！
-USERNAME = "feipiao"  # demo用，生产请接数据库或别的认证
-PASSWORD = "password" # demo用，生产请加密存储
-# ==================
+CONFIG_PATH = Path("config/infer_web.json")
+
+
+def load_config(config_path: Path) -> Dict[str, object]:
+    with config_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+config = load_config(CONFIG_PATH)
+
+CKPT_PATH = str(config["ckpt_path"])
+TARGET_SR = int(config.get("target_sr", 16000))
+SECRET_KEY = str(config["secret_key"])
+USERNAME = str(config["username"])
+PASSWORD = str(config["password"])
 
 app = FastAPI()
 
@@ -270,3 +281,7 @@ async def predict(request: Request, file: UploadFile = File(...)):
         top1_prob=top1_prob,
         topk=topk_dict,
     )
+
+
+if __name__ == "__main__":
+    uvicorn.run("infer_web:app", host="0.0.0.0", port=8000, reload=False)

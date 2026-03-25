@@ -1,0 +1,7 @@
+{
+  "ckpt_path": "checkpoints_ser/best_loss_model_new_35000.pt",
+  "target_sr": 16000,
+  "secret_key": "secret_key",
+  "username": "root",
+  "password": "password"
+}
