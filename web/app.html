@@ -2,216 +2,1468 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>情感识别</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>语音情感识别工作台</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
-    button { margin: 5px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
-    #status { margin-top: 10px; white-space: pre-line; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { margin-bottom: 8px; }
-    section { margin-top: 24px; padding-top: 12px; border-top: 1px solid #ddd; }
-    pre { background: #f6f6f6; padding: 10px; border-radius: 4px; }
-    input[type="file"] { margin-top: 8px; margin-bottom: 8px; }
+    :root {
+      --bg: #edf1f8;
+      --bg-2: #e4e9f3;
+      --mobile-dock-clearance: 198px;
+      --panel: rgba(255, 255, 255, 0.78);
+      --panel-soft: rgba(255, 255, 255, 0.68);
+      --line: rgba(92, 108, 152, 0.34);
+      --bubble-line: rgba(86, 101, 144, 0.32);
+      --bubble-shadow: 0 14px 28px rgba(83, 98, 138, 0.12);
+      --text: #2c3548;
+      --muted: #77839b;
+      --primary: #4e6df4;
+      --primary-deep: #3f5dd8;
+      --secondary: #93a8ff;
+      --ok: #2f8f77;
+      --warn: #b98534;
+      --danger: #c25c68;
+      --shadow: 0 18px 42px rgba(98, 112, 148, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(147, 168, 255, 0.18), transparent 24%),
+        radial-gradient(circle at right 18%, rgba(255, 255, 255, 0.7), transparent 20%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.18)),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 24px));
+      margin: 12px auto 0;
+      padding-bottom: calc(var(--mobile-dock-clearance) + env(safe-area-inset-bottom));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1.5px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 20px 46px rgba(98, 112, 148, 0.14);
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+    }
+
+    .header {
+      position: relative;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      background:
+        radial-gradient(circle at 88% 14%, rgba(122, 148, 255, 0.18), transparent 16%),
+        radial-gradient(circle at 12% 100%, rgba(255, 255, 255, 0.86), transparent 24%);
+    }
+
+    .header::after {
+      content: "";
+      position: absolute;
+      inset: auto 24px 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(110, 130, 186, 0.28), transparent);
+      pointer-events: none;
+    }
+
+    .badge,
+    .identity,
+    .logout {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 10px 15px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1.5px solid rgba(93, 109, 153, 0.28);
+      color: var(--muted);
+      font-size: 13px;
+      box-shadow: 0 10px 22px rgba(98, 112, 148, 0.09);
+    }
+
+    .identity {
+      font-size: 14px;
+    }
+
+    .logout {
+      text-decoration: none;
+      color: var(--primary-deep);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .logout:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 14px 26px rgba(98, 112, 148, 0.14);
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .hero-title-icon {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.92), transparent 26%),
+        linear-gradient(180deg, rgba(128, 150, 255, 0.22), rgba(78, 109, 244, 0.16));
+      border: 1.5px solid rgba(112, 128, 180, 0.22);
+      box-shadow: 0 12px 24px rgba(98, 112, 148, 0.12);
+      flex-shrink: 0;
+    }
+
+    .hero-title-icon svg {
+      width: 24px;
+      height: 24px;
+      overflow: visible;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(20px, 4.2vw, 32px);
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      text-shadow: 0 8px 22px rgba(76, 94, 146, 0.08);
+    }
+
+    .hero-copy p,
+    .muted,
+    .player-subtitle,
+    .player-time,
+    .bar-head,
+    .result-empty {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .result-empty {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      align-self: stretch;
+    }
+
+    .result-empty-card {
+      display: grid;
+      justify-items: center;
+      align-items: center;
+      gap: 14px;
+      padding: 24px 20px;
+      width: 100%;
+    }
+
+    .result-empty-icon {
+      width: 78px;
+      height: 78px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.92), transparent 26%),
+        linear-gradient(180deg, rgba(128, 150, 255, 0.18), rgba(78, 109, 244, 0.12));
+      border: 1.5px solid rgba(112, 128, 180, 0.2);
+      box-shadow: 0 16px 28px rgba(98, 112, 148, 0.1);
+    }
+
+    .result-empty-icon svg {
+      width: 42px;
+      height: 42px;
+      overflow: visible;
+    }
+
+    .result-empty-icon.loading svg {
+      animation: spinRing 0.9s linear infinite;
+    }
+
+    .result-empty-icon.error {
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.92), transparent 26%),
+        linear-gradient(180deg, rgba(235, 136, 149, 0.18), rgba(194, 92, 104, 0.12));
+      border-color: rgba(194, 92, 104, 0.24);
+    }
+
+    .result-empty-icon.loading {
+      background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.92), transparent 26%),
+        linear-gradient(180deg, rgba(128, 150, 255, 0.22), rgba(78, 109, 244, 0.16));
+      border-color: rgba(78, 109, 244, 0.22);
+    }
+
+    .result-empty-copy {
+      max-width: 240px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .desktop-summary {
+      display: none;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    .summary-chip {
+      padding: 16px 18px;
+      border-radius: 20px;
+      background: var(--panel-soft);
+      border: 1.5px solid var(--bubble-line);
+      box-shadow: var(--bubble-shadow);
+    }
+
+    .summary-chip strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .help-toggle {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 15px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1.5px solid rgba(93, 109, 153, 0.28);
+      box-shadow: 0 10px 22px rgba(98, 112, 148, 0.09);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .help-toggle[aria-expanded="true"] {
+      color: var(--primary-deep);
+    }
+
+    .help-body {
+      width: 100%;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 14px;
+      display: grid;
+      gap: 0;
+    }
+
+    .help-body[hidden] {
+      display: none;
+    }
+
+    .help-body .desktop-summary {
+      display: grid;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .card {
+      padding: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-head-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      position: relative;
+      padding-left: 16px;
+    }
+
+    .section-head h2::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 8px;
+      height: 24px;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      background: linear-gradient(180deg, rgba(147, 168, 255, 0.38), rgba(78, 109, 244, 0.95));
+      box-shadow: 0 4px 14px rgba(78, 109, 244, 0.24);
+    }
+
+    .audio-collapse-toggle {
+      display: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(96, 112, 155, 0.22);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--primary-deep);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(98, 112, 148, 0.08);
+    }
+
+    .audio-section-body {
+      display: grid;
+      gap: 0;
+    }
+
+    .status-bar,
+    .result-panel,
+    .audio-shell {
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1.5px solid var(--bubble-line);
+      box-shadow: var(--bubble-shadow);
+    }
+
+    .status-bar {
+      padding: 16px 18px;
+      white-space: pre-line;
+      margin-bottom: 12px;
+    }
+
+    .status-bar.info {
+      background: rgba(110, 140, 244, 0.1);
+      border-color: rgba(110, 140, 244, 0.18);
+      color: #5871c9;
+    }
+
+    .status-bar.success {
+      background: rgba(47, 143, 119, 0.08);
+      border-color: rgba(47, 143, 119, 0.16);
+      color: var(--ok);
+    }
+
+    .status-bar.warning {
+      background: rgba(185, 133, 52, 0.08);
+      border-color: rgba(185, 133, 52, 0.16);
+      color: var(--warn);
+    }
+
+    .status-bar.error {
+      background: rgba(194, 92, 104, 0.08);
+      border-color: rgba(194, 92, 104, 0.16);
+      color: var(--danger);
+    }
+
+    .status-bar.loaded {
+      background: rgba(78, 109, 244, 0.1);
+      border-color: rgba(78, 109, 244, 0.2);
+      color: var(--primary-deep);
+    }
+
+    .status-bar.initial {
+      background: rgba(119, 131, 155, 0.1);
+      border-color: rgba(119, 131, 155, 0.2);
+      color: #6c7891;
+    }
+
+    .result-panel {
+      position: relative;
+      padding: 18px;
+      height: 332px;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      overflow: auto;
+      background:
+        radial-gradient(circle at top right, rgba(111, 139, 255, 0.14), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(249, 251, 255, 0.82));
+    }
+
+    .result-panel.empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 24%);
+      pointer-events: none;
+    }
+
+    .hero-result {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(124, 137, 176, 0.12);
+      padding-bottom: 12px;
+      position: relative;
+    }
+
+    .result-animated-content {
+      transform-origin: top center;
+      transform: scaleY(0.02);
+      opacity: 0.18;
+      will-change: transform, opacity;
+      transition: transform 0.56s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+    }
+
+    .result-animated-content.is-visible {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+
+    .hero-result::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(120, 143, 244, 0.12), rgba(120, 143, 244, 0.35), transparent);
+    }
+
+    .hero-result h3 {
+      margin: 6px 0 0;
+      font-size: 28px;
+    }
+
+    .score {
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--primary-deep);
+      line-height: 1;
+      text-shadow: 0 8px 20px rgba(78, 109, 244, 0.14);
+    }
+
+    .bars {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.42);
+      border: 1px solid rgba(135, 149, 189, 0.1);
+    }
+
+    .bar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .bar-track,
+    .progress-track {
+      overflow: hidden;
+      border-radius: 999px;
+      height: 10px;
+      background: linear-gradient(180deg, rgba(222, 228, 241, 0.9), rgba(231, 236, 247, 0.75));
+    }
+
+    .bar-fill,
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--secondary), var(--primary));
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset, 0 6px 14px rgba(78, 109, 244, 0.22);
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .audio-shell {
+      position: relative;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(122, 148, 255, 0.12), transparent 22%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 255, 0.82));
+    }
+
+    .audio-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 28%);
+    }
+
+    .audio-shell-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .audio-shell-head strong {
+      font-size: 16px;
+    }
+
+    .custom-player {
+      display: grid;
+      gap: 14px;
+    }
+
+    .player-top {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .player-button {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      min-width: 52px;
+      min-height: 52px;
+      border-radius: 50%;
+      padding: 0;
+      border: 0;
+      background: linear-gradient(135deg, #6482ff, var(--primary));
+      color: #f8fbff;
+      box-shadow: 0 14px 30px rgba(78, 109, 244, 0.18);
+      cursor: pointer;
+    }
+
+    .player-button::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid rgba(108, 134, 245, 0.22);
+      opacity: 0.9;
+    }
+
+    .player-meta {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .player-title {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-subtitle {
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-time {
+      min-width: 80px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .wave-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 42px;
+    }
+
+    .wave-bar {
+      flex: 1;
+      min-width: 0;
+      height: var(--bar-height, 24%);
+      border-radius: 999px;
+      background: rgba(205, 213, 232, 0.9);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      transition: background 0.18s ease;
+    }
+
+    .wave-bar.played {
+      background: linear-gradient(180deg, rgba(147, 168, 255, 0.88), rgba(78, 109, 244, 0.96));
+      box-shadow: 0 6px 14px rgba(102, 123, 202, 0.16);
+    }
+
+    .mobile-dock {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 20;
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1.5px solid var(--bubble-line);
+      border-radius: 24px;
+      box-shadow: 0 20px 46px rgba(98, 112, 148, 0.18);
+      backdrop-filter: blur(20px);
+    }
+
+    .dock-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .inline-file-input,
+    .audio-native {
+      display: none;
+    }
+
+    button,
+    .file-trigger {
+      appearance: none;
+      border: 1.5px solid rgba(96, 112, 155, 0.26);
+      border-radius: 18px;
+      padding: 15px 16px;
+      font: inherit;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(236, 241, 252, 0.98));
+      color: var(--text);
+      box-shadow: 0 12px 24px rgba(98, 112, 148, 0.1);
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    button:hover,
+    .file-trigger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(98, 112, 148, 0.14);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 1;
+      transform: none;
+      box-shadow: none;
+      background: linear-gradient(180deg, rgba(241, 244, 252, 0.98), rgba(231, 236, 248, 0.98));
+      border-color: rgba(126, 139, 176, 0.2);
+      color: #9aa6c0;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #6482ff, var(--primary));
+      color: #f8fbff;
+      border-color: transparent;
+      box-shadow: 0 14px 26px rgba(78, 109, 244, 0.18);
+    }
+
+    .warn {
+      background: linear-gradient(135deg, #ee8795, #c25c68);
+      color: #fffafe;
+      border-color: transparent;
+      box-shadow: 0 14px 26px rgba(194, 92, 104, 0.16);
+    }
+
+    .identity,
+    .logout,
+    .help-toggle {
+      backdrop-filter: blur(10px);
+    }
+
+    .desktop-tools {
+      display: none;
+    }
+
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0); opacity: 0.7; }
+      50% { transform: translateY(-2px); opacity: 1; }
+    }
+
+    @keyframes spinRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (min-width: 900px) {
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin-top: 16px;
+        padding-bottom: 32px;
+      }
+
+      .header {
+        padding: 22px 24px;
+      }
+
+      .desktop-summary {
+        display: grid;
+      }
+
+      .layout {
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 18px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .mobile-dock {
+        display: none;
+      }
+
+      .desktop-tools {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 40px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 16px, 1180px);
+        padding-bottom: calc(170px + env(safe-area-inset-bottom));
+      }
+
+      .result-panel {
+        height: 362px;
+      }
+
+      .audio-collapse-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+      }
+
+      .audio-section-body {
+        display: none;
+      }
+
+      .audio-section-body.is-open {
+        display: grid;
+      }
+
+      .card.is-collapsed-audio {
+        padding-bottom: 14px;
+      }
+
+      .card.is-collapsed-audio .section-head {
+        margin-bottom: 4px;
+      }
+
+      .hero-result,
+      .audio-shell-head {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .player-top {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .hero-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .hero-title {
+        gap: 12px;
+      }
+
+      .hero-title-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+      }
+
+      .hero-actions {
+        justify-content: flex-start;
+      }
+
+      .help-toggle {
+        justify-self: start;
+      }
+
+      .player-meta {
+        align-self: center;
+      }
+
+      .player-time {
+        grid-column: 1 / -1;
+        padding-left: 0;
+        margin-top: 2px;
+        text-align: left;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div>当前用户：{{ username }}</div>
-    <a href="/logout">退出登录</a>
-  </header>
+  <main class="page">
+    <header class="panel header">
+      <div class="hero-copy">
+        <div class="hero-row">
+          <div class="hero-title">
+            <div class="hero-title-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <rect x="8" y="21" width="6" height="10" rx="3" fill="rgba(120, 143, 244, 0.52)"></rect>
+                <rect x="17" y="15" width="6" height="22" rx="3" fill="rgba(104, 129, 244, 0.72)"></rect>
+                <rect x="26" y="11" width="6" height="30" rx="3" fill="rgba(78, 109, 244, 0.98)"></rect>
+                <rect x="35" y="18" width="5" height="16" rx="2.5" fill="rgba(104, 129, 244, 0.72)"></rect>
+              </svg>
+            </div>
+            <h1>语音情感识别工作台</h1>
+          </div>
+          <div class="hero-actions">
+            <div class="identity">当前用户：{{ username }}</div>
+            <a class="logout" href="/logout">退出登录</a>
+            <button id="helpToggle" class="help-toggle" type="button" aria-expanded="false" aria-controls="helpBody">帮助说明</button>
+          </div>
+        </div>
 
-  <h1>情感识别</h1>
-  <p>
-    你可以选择两种方式进行情感分析：<br>
-    1）在浏览器中直接录音，回放后点击上传；<br>
-    2）选择本地已有的音频文件上传分析（适配手机上无法直接录音的情况）。
-  </p>
+        <div id="helpBody" class="help-body" hidden>
+          <div class="desktop-summary">
+            <div class="summary-chip">
+              <strong>统一输入</strong>
+              <div class="muted">录音和本地文件走同一条分析路径。</div>
+            </div>
+            <div class="summary-chip">
+              <strong>集中输出</strong>
+              <div class="muted">状态和预测结果放在同一块区域。</div>
+            </div>
+            <div class="summary-chip">
+              <strong>移动优先</strong>
+              <div class="muted">按钮固定在页面底部，首屏即可见。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
 
-  <!-- ========== 录音方式 ========== -->
-  <section>
-    <h2>方式一：在浏览器中录音</h2>
-    <div>
-      <button id="btnRecord">开始录音</button>
-      <button id="btnStop" disabled>停止录音</button>
-      <button id="btnPlay" disabled>播放录音</button>
-      <button id="btnUpload" disabled>上传并分析</button>
+    <section class="layout">
+      <article id="audioCard" class="panel card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <h2>当前音频</h2>
+          </div>
+          <button id="audioCollapseToggle" class="audio-collapse-toggle" type="button" aria-expanded="false" aria-controls="audioSectionBody">展开</button>
+        </div>
+
+        <div id="audioSectionBody" class="audio-section-body">
+          <div class="audio-shell">
+            <div class="audio-shell-head">
+              <strong>音频预览</strong>
+            </div>
+
+            <div class="custom-player">
+              <div class="player-top">
+                <button id="playerToggle" class="player-button" disabled>▶</button>
+                <div class="player-meta">
+                  <div id="playerTitle" class="player-title">初始阶段</div>
+                  <div id="playerSubtitle" class="player-subtitle">当前未载入可播放音频。</div>
+                </div>
+                <div id="playerTime" class="player-time">00:00 / 00:00</div>
+              </div>
+
+              <div class="wave-bars" id="waveBars" aria-hidden="true"></div>
+
+              <div class="progress-track">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <audio id="audioPlayer" class="audio-native"></audio>
+          </div>
+
+          <div class="desktop-tools">
+            <input class="inline-file-input" type="file" id="fileInputDesktop" accept="audio/*" />
+            <button id="btnRecordDesktop" class="primary">录音采集</button>
+            <button id="btnStopDesktop" class="warn" disabled>停止采集</button>
+            <label class="file-trigger" for="fileInputDesktop">文件输入</label>
+            <button id="btnPlayDesktop" disabled>音频试听</button>
+            <button id="btnUploadDesktop" class="primary" disabled>执行分析</button>
+            <button id="btnClearDesktop" disabled>清空音频</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel card">
+        <div class="section-head">
+          <h2>分析结果</h2>
+        </div>
+
+        <div id="status" class="status-bar initial">初始阶段。</div>
+
+        <div id="resultPanel" class="result-panel empty-state">
+          <div class="result-empty">
+            <div class="result-empty-card">
+              <div class="result-empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <rect x="7" y="22" width="6" height="10" rx="3" fill="rgba(120, 143, 244, 0.5)"></rect>
+                  <rect x="16" y="16" width="6" height="22" rx="3" fill="rgba(104, 129, 244, 0.68)"></rect>
+                  <rect x="25" y="12" width="6" height="30" rx="3" fill="rgba(78, 109, 244, 0.95)"></rect>
+                  <rect x="34" y="18" width="6" height="18" rx="3" fill="rgba(104, 129, 244, 0.68)"></rect>
+                </svg>
+              </div>
+              <div class="result-empty-copy">载入音频并执行分析后，这里会显示主情感和各类别置信度。</div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <div class="mobile-dock">
+    <input class="inline-file-input" type="file" id="fileInput" accept="audio/*" />
+    <div class="dock-row">
+      <button id="btnRecord" class="primary">录音</button>
+      <label class="file-trigger" for="fileInput">文件</label>
+      <button id="btnUpload" class="primary" disabled>分析</button>
     </div>
-    <h3>录音预览：</h3>
-    <audio id="audioPlayer" controls></audio>
-  </section>
-
-  <!-- ========== 文件上传方式 ========== -->
-  <section>
-    <h2>方式二：选择本地音频文件上传分析</h2>
-    <p>如果你的浏览器不支持直接录音（例如部分手机浏览器），可以用这个方式：</p>
-    <input type="file" id="fileInput" accept="audio/*" />
-    <br />
-    <button id="btnUploadFile">上传文件并分析</button>
-  </section>
-
-  <!-- ========== 预测结果区域 ========== -->
-  <section>
-    <h2>预测结果</h2>
-    <div id="status"></div>
-    <pre id="result">暂无结果</pre>
-  </section>
+    <div class="dock-row">
+      <button id="btnStop" class="warn" disabled>停止</button>
+      <button id="btnPlay" disabled>试听</button>
+      <button id="btnClear" disabled>清空</button>
+    </div>
+  </div>
 
   <script>
-    const serverUrl = "/predict";  // 和 FastAPI 同源，不需要完整域名
+    const serverUrl = "/predict";
 
     let mediaRecorder = null;
     let recordedChunks = [];
-    let audioBlob = null;
+    let currentAudioBlob = null;
+    let currentAudioName = "";
+    let waveformHeights = [];
+    let waveformRenderToken = 0;
 
-    const btnRecord = document.getElementById("btnRecord");
-    const btnStop = document.getElementById("btnStop");
-    const btnPlay = document.getElementById("btnPlay");
-    const btnUpload = document.getElementById("btnUpload");
     const audioPlayer = document.getElementById("audioPlayer");
     const statusDiv = document.getElementById("status");
-    const resultPre = document.getElementById("result");
+    const resultPanel = document.getElementById("resultPanel");
+    const helpToggle = document.getElementById("helpToggle");
+    const helpBody = document.getElementById("helpBody");
+    const audioCard = document.getElementById("audioCard");
+    const audioCollapseToggle = document.getElementById("audioCollapseToggle");
+    const audioSectionBody = document.getElementById("audioSectionBody");
+    const playerToggle = document.getElementById("playerToggle");
+    const playerTitle = document.getElementById("playerTitle");
+    const playerSubtitle = document.getElementById("playerSubtitle");
+    const playerTime = document.getElementById("playerTime");
+    const progressFill = document.getElementById("progressFill");
+    const waveBars = document.getElementById("waveBars");
+    const mobile = {
+      record: document.getElementById("btnRecord"),
+      stop: document.getElementById("btnStop"),
+      play: document.getElementById("btnPlay"),
+      upload: document.getElementById("btnUpload"),
+      clear: document.getElementById("btnClear"),
+      fileInput: document.getElementById("fileInput"),
+    };
 
-    const fileInput = document.getElementById("fileInput");
-    const btnUploadFile = document.getElementById("btnUploadFile");
+    const desktop = {
+      record: document.getElementById("btnRecordDesktop"),
+      stop: document.getElementById("btnStopDesktop"),
+      play: document.getElementById("btnPlayDesktop"),
+      upload: document.getElementById("btnUploadDesktop"),
+      clear: document.getElementById("btnClearDesktop"),
+      fileInput: document.getElementById("fileInputDesktop"),
+    };
 
-    function setStatus(msg) {
+    const controlGroups = [mobile, desktop];
+    const MIN_ANALYSIS_LOADING_MS = 800;
+    const mobileAudioCollapseQuery = window.matchMedia("(max-width: 640px)");
+    const waveformBarCount = 85;
+
+    function setStatus(msg, tone = "info") {
       statusDiv.textContent = msg;
+      statusDiv.className = `status-bar ${tone}`;
     }
 
-    // ===== 方式一：浏览器录音 =====
-    btnRecord.onclick = async () => {
-      recordedChunks = [];
-      audioBlob = null;
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
-      // 能力检测：先看浏览器是否支持 getUserMedia
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        resultPre.textContent = "当前浏览器不支持直接录音（缺少 navigator.mediaDevices.getUserMedia）。";
+    function syncAudioCollapseUI(forceOpen = null) {
+      const shouldCollapse = mobileAudioCollapseQuery.matches;
+      const isOpen = forceOpen === null ? !shouldCollapse : forceOpen;
+      audioSectionBody.classList.toggle("is-open", isOpen);
+      audioCard.classList.toggle("is-collapsed-audio", shouldCollapse && !isOpen);
+      audioCollapseToggle.setAttribute("aria-expanded", String(isOpen));
+      audioCollapseToggle.textContent = isOpen ? "收起" : "展开";
+    }
+
+    function renderResultState(type = "empty") {
+      resultPanel.classList.add("empty-state");
+      const states = {
+        empty: {
+          iconClass: "",
+          copy: "载入音频并执行分析后，这里会显示主情感和各类别置信度。",
+          svg: `
+            <svg viewBox="0 0 48 48" fill="none">
+              <rect x="7" y="22" width="6" height="10" rx="3" fill="rgba(120, 143, 244, 0.5)"></rect>
+              <rect x="16" y="16" width="6" height="22" rx="3" fill="rgba(104, 129, 244, 0.68)"></rect>
+              <rect x="25" y="12" width="6" height="30" rx="3" fill="rgba(78, 109, 244, 0.95)"></rect>
+              <rect x="34" y="18" width="6" height="18" rx="3" fill="rgba(104, 129, 244, 0.68)"></rect>
+            </svg>
+          `,
+        },
+        loading: {
+          iconClass: "loading",
+          copy: "正在生成情感识别结果，请稍候。",
+          svg: `
+            <svg viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="14" stroke="rgba(78, 109, 244, 0.22)" stroke-width="4"></circle>
+              <path d="M24 10a14 14 0 0 1 14 14" stroke="rgba(78, 109, 244, 0.95)" stroke-width="4" stroke-linecap="round"></path>
+            </svg>
+          `,
+        },
+        error: {
+          iconClass: "error",
+          copy: "当前结果未生成成功，请检查音频或稍后重试。",
+          svg: `
+            <svg viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="15" stroke="rgba(194, 92, 104, 0.28)" stroke-width="4"></circle>
+              <path d="M24 15v11" stroke="rgba(194, 92, 104, 0.95)" stroke-width="4" stroke-linecap="round"></path>
+              <circle cx="24" cy="31.5" r="2.4" fill="rgba(194, 92, 104, 0.95)"></circle>
+            </svg>
+          `,
+        },
+      };
+
+      const state = states[type] || states.empty;
+      resultPanel.innerHTML = `
+        <div class="result-empty">
+          <div class="result-empty-card">
+            <div class="result-empty-icon ${state.iconClass}" aria-hidden="true">
+              ${state.svg}
+            </div>
+            <div class="result-empty-copy">${state.copy}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function resetResult() {
+      renderResultState("empty");
+    }
+
+    function createWaveformMarkup(heights, playedRatio = 0) {
+      const playedCount = Math.round(heights.length * playedRatio);
+      return heights.map((height, index) => {
+        const playedClass = index < playedCount ? " played" : "";
+        return `<div class="wave-bar${playedClass}" style="--bar-height:${height}%"></div>`;
+      }).join("");
+    }
+
+    function renderWaveform(heights, playedRatio = 0) {
+      waveformHeights = heights;
+      waveBars.innerHTML = createWaveformMarkup(heights, playedRatio);
+    }
+
+    function renderPlaceholderWaveform() {
+      renderWaveform(Array.from({ length: waveformBarCount }, () => 22), 0);
+    }
+
+    async function buildWaveformFromBlob(blob) {
+      const token = ++waveformRenderToken;
+      try {
+        const arrayBuffer = await blob.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) {
+          renderPlaceholderWaveform();
+          return;
+        }
+        const audioContext = new AudioCtx();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+        const channelData = audioBuffer.getChannelData(0);
+        const blockSize = Math.max(1, Math.floor(channelData.length / waveformBarCount));
+        const rawAmplitudes = [];
+
+        for (let i = 0; i < waveformBarCount; i += 1) {
+          const start = i * blockSize;
+          const end = i === waveformBarCount - 1 ? channelData.length : Math.min(channelData.length, start + blockSize);
+          let sum = 0;
+          for (let j = start; j < end; j += 1) {
+            sum += Math.abs(channelData[j]);
+          }
+          const avg = end > start ? sum / (end - start) : 0;
+          rawAmplitudes.push(avg);
+        }
+
+        const minAmp = Math.min(...rawAmplitudes);
+        const maxAmp = Math.max(...rawAmplitudes);
+        const range = Math.max(maxAmp - minAmp, 1e-6);
+        const heights = rawAmplitudes.map((amp) => {
+          const normalized = (amp - minAmp) / range;
+          const eased = Math.pow(normalized, 0.72);
+          const scaled = 14 + eased * 86;
+          return scaled.toFixed(2);
+        });
+
+        await audioContext.close();
+        if (token !== waveformRenderToken) return;
+        renderWaveform(heights, 0);
+      } catch (error) {
+        console.error("Waveform decode failed:", error);
+        if (token !== waveformRenderToken) return;
+        renderPlaceholderWaveform();
+      }
+    }
+
+    function renderResult(data) {
+      resultPanel.classList.remove("empty-state");
+      const top1Label = data.top1_label;
+      const top1Prob = Number(data.top1_prob || 0);
+      const top1Percent = (top1Prob * 100).toFixed(2);
+      const entries = Object.entries(data.topk || {});
+
+      const bars = entries.map(([label, prob]) => {
+        const percent = (Number(prob) * 100).toFixed(2);
+        return `
+          <div class="bar-row">
+            <div class="bar-head">
+              <span>${label}</span>
+              <span class="bar-percent" data-percent="${percent}%"></span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" data-width="${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      resultPanel.innerHTML = `
+        <div class="result-animated-content">
+          <div class="hero-result">
+            <div>
+              <h3>${top1Label}</h3>
+            </div>
+            <div class="score">${top1Percent}%</div>
+          </div>
+          <div class="bars">${bars}</div>
+        </div>
+      `;
+
+      const animatedContent = resultPanel.querySelector(".result-animated-content");
+      const barFills = Array.from(resultPanel.querySelectorAll(".bar-fill"));
+      const barPercents = Array.from(resultPanel.querySelectorAll(".bar-percent"));
+
+      void animatedContent.offsetHeight;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          animatedContent.classList.add("is-visible");
+        });
+      });
+
+      setTimeout(() => {
+        barFills.forEach((fill, index) => {
+          const targetWidth = fill.dataset.width || "0%";
+          const percentNode = barPercents[index];
+          setTimeout(() => {
+            fill.style.width = targetWidth;
+            if (percentNode) percentNode.textContent = percentNode.dataset.percent || "";
+          }, index * 70);
+        });
+      }, 580);
+    }
+
+    function formatTime(value) {
+      if (!Number.isFinite(value) || value < 0) return "00:00";
+      const minutes = Math.floor(value / 60);
+      const seconds = Math.floor(value % 60);
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function refreshPlayerTime() {
+      const current = formatTime(audioPlayer.currentTime || 0);
+      const total = formatTime(audioPlayer.duration || 0);
+      playerTime.textContent = `${current} / ${total}`;
+      const progress = audioPlayer.duration ? (audioPlayer.currentTime / audioPlayer.duration) * 100 : 0;
+      progressFill.style.width = `${progress}%`;
+      const playedRatio = audioPlayer.duration ? (audioPlayer.currentTime / audioPlayer.duration) : 0;
+      if (waveformHeights.length) {
+        waveBars.innerHTML = createWaveformMarkup(waveformHeights, playedRatio);
+      }
+    }
+
+    function updatePlayerPlaybackUI() {
+      const isPlaying = !audioPlayer.paused && !audioPlayer.ended;
+      playerToggle.textContent = isPlaying ? "❚❚" : "▶";
+      mobile.play.textContent = isPlaying ? "暂停播放" : "试听";
+      desktop.play.textContent = isPlaying ? "暂停播放" : "音频试听";
+    }
+
+    function setRecordingState(isRecording) {
+      controlGroups.forEach((group) => {
+        group.record.disabled = isRecording;
+        group.stop.disabled = !isRecording;
+      });
+    }
+
+    function setAudioReady(ready) {
+      controlGroups.forEach((group) => {
+        group.play.disabled = !ready;
+        group.upload.disabled = !ready;
+        group.clear.disabled = !ready;
+      });
+      playerToggle.disabled = !ready;
+    }
+
+    function setCurrentAudio({ blob = null, name = "", detail = "" } = {}) {
+      currentAudioBlob = blob;
+      currentAudioName = name;
+
+      if (!blob) {
+        audioPlayer.pause();
+        audioPlayer.removeAttribute("src");
+        audioPlayer.load();
+        setAudioReady(false);
+        waveformRenderToken += 1;
+        playerTitle.textContent = "初始阶段";
+        playerSubtitle.textContent = "当前未载入可播放音频。";
+        progressFill.style.width = "0%";
+        playerTime.textContent = "00:00 / 00:00";
+        controlGroups.forEach((group) => {
+          group.fileInput.value = "";
+        });
+        updatePlayerPlaybackUI();
+        renderPlaceholderWaveform();
         return;
       }
 
-      setStatus("请求麦克风权限...");
+      audioPlayer.src = URL.createObjectURL(blob);
+      setAudioReady(true);
+      playerTitle.textContent = name || "已载入音频";
+      playerSubtitle.textContent = detail || "音频已载入，可执行分析。";
+      progressFill.style.width = "0%";
+      playerTime.textContent = "00:00 / 00:00";
+      updatePlayerPlaybackUI();
+      buildWaveformFromBlob(blob);
+    }
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+    function formatFileSize(size) {
+      if (size < 1024) return `${size} B`;
+      if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    }
 
+    function onFileSelected(file) {
+      if (!file) return;
+      setCurrentAudio({
+        blob: file,
+        name: file.name,
+        detail: `${file.type || "未知格式"} · ${formatFileSize(file.size)}`,
+      });
+      setStatus(`已载入文件：${file.name}`, "loaded");
+    }
+
+    controlGroups.forEach((group) => {
+      group.fileInput.addEventListener("change", (event) => {
+        onFileSelected(event.target.files[0]);
+      });
+
+      group.record.addEventListener("click", async () => {
         recordedChunks = [];
 
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            recordedChunks.push(e.data);
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setStatus("当前浏览器不支持录音功能，请改用文件输入。", "warning");
+          resetResult();
+          return;
+        }
+
+        setStatus("正在请求麦克风权限...", "info");
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: "audio/webm" });
+            const stamp = new Date().toLocaleString("zh-CN", { hour12: false });
+            setCurrentAudio({
+              blob,
+              name: `浏览器录音 ${stamp}`,
+              detail: "录音已完成，当前音频来自浏览器麦克风。",
+            });
+            setStatus("录音完成。", "success");
+
+            if (mediaRecorder && mediaRecorder.stream) {
+              mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+            }
+          };
+
+          mediaRecorder.start();
+          setRecordingState(true);
+          setStatus("录音中，请说话。", "warning");
+        } catch (err) {
+          console.error(err);
+          setRecordingState(false);
+          setStatus(`无法访问麦克风：${err.name} - ${err.message}`, "error");
+        }
+      });
+
+      group.stop.addEventListener("click", () => {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+          setRecordingState(false);
+          setStatus("录音已停止，正在生成预览。", "info");
+        }
+      });
+
+      group.play.addEventListener("click", () => {
+        if (!currentAudioBlob) {
+          setStatus("当前无可播放音频。", "warning");
+          return;
+        }
+
+        if (audioPlayer.paused) {
+          audioPlayer.play();
+          setStatus("播放中。", "info");
+        } else {
+          audioPlayer.pause();
+          setStatus("播放已暂停。", "info");
+        }
+      });
+
+      group.upload.addEventListener("click", async () => {
+        if (!currentAudioBlob) {
+          setStatus("当前无可分析音频。", "warning");
+          return;
+        }
+
+        const loadingStartedAt = performance.now();
+        setStatus("分析处理中。", "info");
+        renderResultState("loading");
+
+        try {
+          const formData = new FormData();
+          formData.append("file", currentAudioBlob, currentAudioName || "audio.webm");
+
+          const resp = await fetch(serverUrl, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!resp.ok) {
+            throw new Error(`服务器返回错误状态: ${resp.status}`);
           }
-        };
 
-        mediaRecorder.onstop = () => {
-          audioBlob = new Blob(recordedChunks, { type: "audio/webm" });
-          const url = URL.createObjectURL(audioBlob);
-          audioPlayer.src = url;
-          btnPlay.disabled = false;
-          btnUpload.disabled = false;
-          setStatus("录音完成，可以播放或点击“上传并分析”。");
-        };
+          const data = await resp.json();
+          const remaining = Math.max(0, MIN_ANALYSIS_LOADING_MS - (performance.now() - loadingStartedAt));
+          if (remaining > 0) await wait(remaining);
+          renderResult(data);
+          setStatus("分析完成。", "success");
+        } catch (err) {
+          console.error(err);
+          const remaining = Math.max(0, MIN_ANALYSIS_LOADING_MS - (performance.now() - loadingStartedAt));
+          if (remaining > 0) await wait(remaining);
+          renderResultState("error");
+          setStatus(`分析失败：${err}`, "error");
+        }
+      });
 
-        mediaRecorder.start();
-        setStatus("录音中...");
-        btnRecord.disabled = true;
-        btnStop.disabled = false;
-      } catch (err) {
-        console.error(err);
-        setStatus("无法访问麦克风：" + err.name + " - " + err.message + "\n你也可以使用下面的文件上传方式。");
-      }
-    };
+      group.clear.addEventListener("click", () => {
+        setCurrentAudio();
+        resetResult();
+        setStatus("初始状态。", "initial");
+      });
+    });
 
-    btnStop.onclick = () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        btnStop.disabled = true;
-        btnRecord.disabled = false;
-        setStatus("停止录音。");
-      }
-    };
-
-    btnPlay.onclick = () => {
-      if (audioBlob) {
+    playerToggle.addEventListener("click", () => {
+      if (!currentAudioBlob) return;
+      if (audioPlayer.paused) {
         audioPlayer.play();
+        setStatus("播放中。", "info");
+      } else {
+        audioPlayer.pause();
+        setStatus("播放已暂停。", "info");
       }
-    };
+    });
 
-    btnUpload.onclick = async () => {
-      if (!audioBlob) {
-        setStatus("没有可上传的录音。");
-        return;
-      }
+    helpToggle.addEventListener("click", () => {
+      const expanded = helpToggle.getAttribute("aria-expanded") === "true";
+      helpToggle.setAttribute("aria-expanded", String(!expanded));
+      helpBody.hidden = expanded;
+    });
 
-      setStatus("正在上传录音并分析...");
-      resultPre.textContent = "暂无结果";
+    audioCollapseToggle.addEventListener("click", () => {
+      const expanded = audioCollapseToggle.getAttribute("aria-expanded") === "true";
+      syncAudioCollapseUI(!expanded);
+    });
 
-      try {
-        const formData = new FormData();
-        formData.append("file", audioBlob, "audio.webm");
+    mobileAudioCollapseQuery.addEventListener("change", () => {
+      syncAudioCollapseUI(null);
+    });
 
-        const resp = await fetch(serverUrl, {
-          method: "POST",
-          body: formData,
-        });
+    syncAudioCollapseUI(null);
+    renderPlaceholderWaveform();
 
-        if (!resp.ok) {
-          throw new Error("服务器返回错误状态: " + resp.status);
-        }
-
-        const data = await resp.json();
-        setStatus("分析完成。");
-        renderResult(data);
-      } catch (err) {
-        console.error(err);
-        setStatus("上传或分析失败: " + err);
-      }
-    };
-
-    // ===== 方式二：上传本地音频文件 =====
-    btnUploadFile.onclick = async () => {
-      const file = fileInput.files[0];
-      if (!file) {
-        setStatus("请先选择一个音频文件。");
-        return;
-      }
-
-      setStatus("正在上传文件并分析...");
-      resultPre.textContent = "暂无结果";
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const resp = await fetch(serverUrl, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!resp.ok) {
-          throw new Error("服务器返回错误状态: " + resp.status);
-        }
-
-        const data = await resp.json();
-        setStatus("分析完成。");
-        renderResult(data);
-      } catch (err) {
-        console.error(err);
-        setStatus("上传或分析失败: " + err);
-      }
-    };
-
-    // ===== 通用：渲染预测结果 =====
-    function renderResult(data) {
-      const top1Label = data.top1_label;
-      const top1Prob = (data.top1_prob * 100).toFixed(2);
-
-      let txt = `预测情感：${top1Label}\n置信度：${top1Prob}%\n\nTop-K:\n`;
-      for (const [lab, prob] of Object.entries(data.topk)) {
-        txt += `  - ${lab}: ${(prob * 100).toFixed(2)}%\n`;
-      }
-      resultPre.textContent = txt;
-    }
+    audioPlayer.addEventListener("loadedmetadata", refreshPlayerTime);
+    audioPlayer.addEventListener("timeupdate", refreshPlayerTime);
+    audioPlayer.addEventListener("play", updatePlayerPlaybackUI);
+    audioPlayer.addEventListener("pause", updatePlayerPlaybackUI);
+    audioPlayer.addEventListener("ended", () => {
+      updatePlayerPlaybackUI();
+      refreshPlayerTime();
+    });
   </script>
 </body>
 </html>

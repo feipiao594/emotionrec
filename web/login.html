@@ -2,37 +2,251 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>登录 - 情感识别后台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>登录 - 语音情感识别工作台</title>
   <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .card {
-      border: 1px solid #ddd;
-      padding: 24px 32px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      min-width: 300px;
+    :root {
+      --bg: #edf1f8;
+      --bg-2: #e4e9f3;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-soft: rgba(255, 255, 255, 0.68);
+      --line: rgba(92, 108, 152, 0.38);
+      --text: #2c3548;
+      --muted: #77839b;
+      --primary: #4e6df4;
+      --primary-deep: #3f5dd8;
+      --danger: #c25c68;
+      --shadow: 0 18px 42px rgba(98, 112, 148, 0.12);
     }
-    input { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; margin-top: 8px; cursor: pointer; }
-    .error { color: red; margin-top: 8px; }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(147, 168, 255, 0.18), transparent 24%),
+        radial-gradient(circle at right 18%, rgba(255, 255, 255, 0.74), transparent 20%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.16)),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      padding: 16px;
+      display: grid;
+      place-items: center;
+    }
+
+    .shell {
+      width: min(460px, 100%);
+    }
+
+    .panel {
+      position: relative;
+      background: var(--panel);
+      border: 1.5px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      padding: 28px 24px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 88% 12%, rgba(123, 147, 255, 0.16), transparent 18%),
+        radial-gradient(circle at 8% 100%, rgba(255, 255, 255, 0.86), transparent 24%),
+        var(--panel);
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 26%);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1.5px solid rgba(100, 116, 160, 0.32);
+      color: var(--muted);
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(98, 112, 148, 0.06);
+      backdrop-filter: blur(10px);
+    }
+
+    .head {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 7vw, 44px);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      text-shadow: 0 10px 24px rgba(78, 96, 148, 0.08);
+    }
+
+    .lead,
+    .hint {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .lead {
+      margin: 0;
+      font-size: 15px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.52);
+      border: 1.5px solid rgba(100, 116, 160, 0.3);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .field {
+      position: relative;
+      margin-bottom: 14px;
+      padding: 0;
+    }
+
+    .field label {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8794ae;
+      font-size: 14px;
+      line-height: 1;
+      pointer-events: none;
+      padding: 0 6px;
+      background: linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(243, 247, 255, 0.92));
+      border-radius: 999px;
+      transition: top 0.18s ease, transform 0.18s ease, font-size 0.18s ease, color 0.18s ease;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1.5px solid rgba(100, 116, 160, 0.3);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(242, 246, 255, 0.98), rgba(250, 252, 255, 0.94));
+      padding: 26px 18px 12px;
+      font-size: 16px;
+      color: var(--text);
+      outline: none;
+      box-shadow:
+        inset 0 2px 5px rgba(161, 176, 214, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .field input::placeholder {
+      color: transparent;
+    }
+
+    .field input:focus {
+      border-color: rgba(78, 109, 244, 0.34);
+      box-shadow:
+        inset 0 2px 5px rgba(161, 176, 214, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        0 0 0 4px rgba(78, 109, 244, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .field:focus-within label,
+    .field input:not(:placeholder-shown) + label {
+      top: 8px;
+      transform: translateY(0);
+      font-size: 12px;
+      color: var(--primary-deep);
+    }
+
+    .submit {
+      width: 100%;
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 18px;
+      background: linear-gradient(135deg, #6482ff, var(--primary));
+      color: #f8fbff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(78, 109, 244, 0.18);
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .submit:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+      box-shadow: 0 18px 32px rgba(78, 109, 244, 0.22);
+    }
+
+    .submit:active {
+      transform: translateY(1px);
+    }
+
+    .error {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(194, 92, 104, 0.08);
+      border: 1.5px solid rgba(194, 92, 104, 0.28);
+      color: var(--danger);
+      line-height: 1.7;
+    }
+
+    .hint {
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    @media (min-width: 900px) {
+      body {
+        padding: 24px;
+      }
+
+      .panel {
+        padding: 32px;
+      }
+    }
+
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>情感识别后台登录</h2>
-    <form method="post" action="/login">
-      <label>用户名</label>
-      <input type="text" name="username" required />
+  <main class="shell">
+    <section class="panel">
+      <div class="head">
+        <div class="badge">登录</div>
+        <h1>语音情感识别工作台</h1>
+        <p class="lead">工作台支持浏览器录音与本地音频上传，统一展示情感识别状态、主预测结果和各类别置信度。</p>
+      </div>
 
-      <label>密码</label>
-      <input type="password" name="password" required />
+      <form method="post" action="/login">
+        <div class="field">
+          <input id="username" type="text" name="username" placeholder=" " required />
+          <label for="username">用户名</label>
+        </div>
 
-      <button type="submit">登录</button>
+        <div class="field">
+          <input id="password" type="password" name="password" placeholder=" " required />
+          <label for="password">密码</label>
+        </div>
 
-      {% if error %}
-      <div class="error">{{ error }}</div>
-      {% endif %}
-    </form>
-  </div>
+        <button class="submit" type="submit">进入工作台</button>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+      </form>
+
+    </section>
+  </main>
 </body>
 </html>
