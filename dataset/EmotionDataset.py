@@ -4,6 +4,8 @@ from typing import Dict, Optional
 import torch
 from torch.utils.data import Dataset
 import torchaudio
+
+from .AudioAugment import AudioAugment
 ########################################
 #   数据集：EmotionDataset（JSONL 示例）
 ########################################
@@ -23,6 +25,7 @@ class EmotionDataset(Dataset):
         manifest_path: str,
         label2id: Optional[Dict[str, int]] = None,
         target_sr: int = 16000,
+        augment: Optional[AudioAugment] = None,
     ):
         super().__init__()
         self.items = []
@@ -44,6 +47,7 @@ class EmotionDataset(Dataset):
         self.id2label = {i: lab for lab, i in self.label2id.items()}
 
         self.target_sr = target_sr
+        self.augment = augment
         self._resamplers: Dict[int, torchaudio.transforms.Resample] = {}
 
     def __len__(self) -> int:
@@ -68,6 +72,8 @@ class EmotionDataset(Dataset):
     def __getitem__(self, idx: int) -> Dict:
         item = self.items[idx]
         wav = self._load_audio(item["audio_path"])
+        if self.augment is not None:
+            wav = self.augment(wav)
         label = item["label"]
         label_id = self.label2id[label]
 

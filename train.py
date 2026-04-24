@@ -115,6 +115,7 @@ def train_loop(
     freeze_hubert: bool = True,
     num_workers: int = 2,
     save_dir: str = "checkpoints_ser",
+    use_augmentation: bool = True,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -125,7 +126,12 @@ def train_loop(
     print("Labels:", label2id)
 
     # 2) 构建真正的 Dataset / DataLoader
-    train_ds = EmotionDataset(manifest_path = train_manifest, label2id = label2id)
+    train_augment = AudioAugment() if use_augmentation else None
+    train_ds = EmotionDataset(
+        manifest_path=train_manifest,
+        label2id=label2id,
+        augment=train_augment,
+    )
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
@@ -135,7 +141,11 @@ def train_loop(
     )
 
     if val_manifest is not None and os.path.exists(val_manifest):
-        val_ds = EmotionDataset(manifest_path = val_manifest, label2id = label2id)
+        val_ds = EmotionDataset(
+            manifest_path=val_manifest,
+            label2id=label2id,
+            augment=None,
+        )
         val_loader = DataLoader(
             val_ds,
             batch_size=batch_size,
@@ -242,4 +252,5 @@ if __name__ == "__main__":
         freeze_hubert=True,
         num_workers=4,
         save_dir="checkpoints_ser",
+        use_augmentation=True,
     )

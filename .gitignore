@@ -4,3 +4,7 @@ checkpoints_ser/
 temp/
 *.csr
 *.key
+.codex
+docs/
+hubert*/
+.vscode/
